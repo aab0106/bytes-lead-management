@@ -1,0 +1,478 @@
+.dashboard {
+  padding: 1rem;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 50%, #dee2e6 100%);
+  min-height: 100vh;
+  position: relative;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+.dashboard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #76b07f, #5a8f63, #76b07f);
+  z-index: 1;
+}
+
+.dashboardHeader {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e9ecef;
+  width: 100%;
+  gap: 1rem;
+}
+
+.headerLeft {
+  flex: 1;
+  min-width: 0;
+}
+
+.headerLeft h1 {
+  margin: 0;
+  color: #2d3748;
+  font-weight: 700;
+  font-size: 1.5rem;
+  word-wrap: break-word;
+  line-height: 1.2;
+}
+
+.headerLeft p {
+  margin: 0.5rem 0 0 0;
+  color: #718096;
+  font-size: 0.9rem;
+  display: none;
+}
+
+.headerRight {
+  flex-shrink: 0;
+  margin-right: 0;
+}
+
+.notificationBtn {
+  position: relative;
+  border: none;
+  background: white;
+  border-radius: 50%;
+  width: 45px;
+  height: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-right: 0;
+}
+
+.notificationBtn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  background: #f8f9fa;
+}
+
+.notificationBadge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  background: #e53e3e;
+  color: white;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 0.65rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+.statsRow {
+  margin-bottom: 1.5rem;
+  width: 100%;
+}
+
+.statCard {
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  height: 100px;
+  background: white;
+  margin-bottom: 1rem;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  text-align: center;
+}
+
+.statCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.12);
+}
+
+.statCard.primary {
+  border-left: 4px solid #4299e1;
+}
+
+.statCard.success {
+  border-left: 4px solid #48bb78;
+}
+
+.statCard.warning {
+  border-left: 4px solid #ed8936;
+}
+
+.statCard.info {
+  border-left: 4px solid #0bc5ea;
+}
+
+.statContent {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 100%;
+  padding: 0.5rem;
+  width: 100%;
+  text-align: center;
+}
+
+.statText {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.statValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+  color: #2d3748;
+  word-wrap: break-word;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.statTitle {
+  font-size: 0.8rem;
+  color: #718096;
+  margin: 0.25rem 0 0 0;
+  font-weight: 600;
+  word-wrap: break-word;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.statSubtitle {
+  color: #a0aec0;
+  font-size: 0.7rem;
+  word-wrap: break-word;
+  text-align: center;
+  margin-top: 0.25rem;
+  line-height: 1.2;
+}
+
+.statIcon {
+  font-size: 1.8rem;
+  opacity: 0.8;
+  flex-shrink: 0;
+  margin-left: 0.5rem;
+}
+
+.mainContentRow {
+  margin-bottom: 1.5rem;
+  width: 100%;
+}
+
+.mainContentRow .col, 
+.mainContentRow .col-lg-8, 
+.mainContentRow .col-lg-4 {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.floatingButton {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  background: linear-gradient(135deg, #76b07f, #5a8f63);
+  border: none;
+  border-radius: 50px;
+  padding: 0.7rem 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  box-shadow: 
+    0 4px 15px rgba(118, 176, 127, 0.4),
+    0 2px 4px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  z-index: 1000;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  min-width: auto;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.floatingButton:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 
+    0 6px 20px rgba(118, 176, 127, 0.6),
+    0 3px 6px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  background: linear-gradient(135deg, #5a8f63, #4a7a52);
+}
+
+.plusIcon {
+  font-size: 1.3rem;
+  font-weight: bold;
+}
+
+.buttonText {
+  font-size: 0.85rem;
+}
+
+/* Small Mobile - FIXED CARDS LAYOUT */
+@media (max-width: 480px) {
+  .dashboard {
+    padding: 0.75rem;
+  }
+  
+  .dashboardHeader {
+    padding: 0.5rem 0;
+    margin-bottom: 1rem;
+    gap: 0.5rem;
+  }
+  
+  .headerLeft h1 {
+    font-size: 1.3rem;
+    line-height: 1.1;
+  }
+  
+  .notificationBtn {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+    margin-right: 0;
+  }
+  
+  .notificationBadge {
+    width: 16px;
+    height: 16px;
+    font-size: 0.6rem;
+    top: -2px;
+    right: -2px;
+  }
+  
+  .statsRow {
+    margin-bottom: 1rem;
+  }
+  
+  .statCard {
+    height: 85px;
+    margin-bottom: 0.75rem;
+    text-align: center;
+    padding: 0.5rem;
+  }
+  
+  .statContent {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    text-align: center;
+    padding: 0.25rem;
+  }
+  
+  .statText {
+    flex: 1;
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .statIcon {
+    font-size: 1.5rem;
+    margin-left: 0;
+    flex-shrink: 0;
+    order: 0;
+  }
+  
+  .statValue {
+    font-size: 1.3rem;
+    text-align: center;
+    line-height: 1.1;
+  }
+  
+  .statTitle {
+    font-size: 0.75rem;
+    text-align: center;
+    margin-top: 0.2rem;
+    line-height: 1.1;
+  }
+  
+  .statSubtitle {
+    font-size: 0.65rem;
+    text-align: center;
+    margin-top: 0.1rem;
+    line-height: 1.1;
+  }
+  
+  .buttonText {
+    display: none;
+  }
+  
+  .floatingButton {
+    padding: 0.8rem;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    justify-content: center;
+    bottom: 0.75rem;
+    right: 0.75rem;
+  }
+  
+  .dashboard, 
+  .dashboardHeader,
+  .statsRow,
+  .mainContentRow {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+}
+
+/* Tablet */
+@media (min-width: 481px) and (max-width: 768px) {
+  .dashboard {
+    padding: 1rem;
+  }
+  
+  .dashboardHeader {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  .headerLeft p {
+    display: block;
+  }
+  
+  .headerRight {
+    align-self: auto;
+    margin-right: 0;
+  }
+  
+  .statCard {
+    height: 100px;
+    margin-bottom: 1rem;
+  }
+  
+  .statsRow {
+    margin-bottom: 1.5rem;
+  }
+  
+  .statContent {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+  
+  .statIcon {
+    margin-left: 0.5rem;
+  }
+}
+
+/* Desktop */
+@media (min-width: 769px) {
+  .dashboard {
+    padding: 1.5rem;
+  }
+  
+  .dashboardHeader {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 0 1.5rem 0;
+  }
+  
+  .headerLeft p {
+    display: block;
+  }
+  
+  .headerRight {
+    align-self: auto;
+    margin-right: 0;
+  }
+  
+  .headerLeft h1 {
+    font-size: 1.8rem;
+  }
+  
+  .notificationBtn {
+    margin-right: 0;
+  }
+  
+  .statCard {
+    height: 110px;
+    margin-bottom: 0;
+  }
+  
+  .statsRow {
+    margin-bottom: 2rem;
+  }
+  
+  .statContent {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+  
+  .floatingButton {
+    bottom: 1.5rem;
+    right: 1.5rem;
+    padding: 0.75rem 1.5rem;
+  }
+}
+
+/* Large Desktop */
+@media (min-width: 1025px) {
+  .dashboard {
+    padding: 2rem;
+  }
+  
+  .headerLeft h1 {
+    font-size: 2rem;
+  }
+  
+  .statCard {
+    height: 120px;
+  }
+  
+  .floatingButton {
+    bottom: 2rem;
+    right: 2rem;
+  }
+}
+
+/* Ensure notification button doesn't go off-screen */
+@media (max-width: 768px) {
+  .dashboardHeader {
+    padding-right: 0.5rem;
+  }
+  
+  .headerRight {
+    margin-right: 0;
+  }
+}

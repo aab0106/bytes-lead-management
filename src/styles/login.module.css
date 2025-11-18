@@ -1,0 +1,320 @@
+/* Login Page Styles - Modular CSS */
+.loginContainer {
+  min-height: 100vh;
+  background: #f8f9fa;
+}
+
+.mainContainer {
+  padding: 0;
+  height: 100vh;
+}
+
+.loginRow {
+  height: 100vh;
+  margin: 0;
+}
+
+/* Logo Section */
+.logoSection {
+  background: #76b07f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.logoContainer {
+  text-align: center;
+  color: #ffffff;
+}
+
+.logo {
+  width: 180px;
+  height: auto;
+  margin-bottom: 2rem;
+  /* filter: brightness(0) invert(1); */
+}
+
+.welcomeText h1 {
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: #ffffff;
+}
+
+.welcomeText p {
+  font-size: 1.1rem;
+  color: #e8f5e8;
+  max-width: 400px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* Form Section */
+.formSection {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: #2d3748;
+}
+
+.formContainer {
+  width: 100%;
+  max-width: 400px;
+}
+
+.formHeader {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.formHeader h2 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 0.5rem;
+}
+
+.formHeader p {
+  color: #cbd5e0;
+  font-size: 1rem;
+}
+
+/* Form Styles */
+.loginForm {
+  margin-bottom: 0;
+}
+
+.formGroup {
+  margin-bottom: 1.5rem;
+}
+
+.formLabel {
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.formControl {
+  padding: 0.75rem 1rem;
+  border: 2px solid #718096;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #2d3748;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+.formControl:focus {
+  border-color: #76b07f;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(118, 176, 127, 0.1);
+  outline: none;
+}
+
+.formControl::placeholder {
+  color: #a0aec0;
+}
+
+/* Remember Me */
+.rememberMe {
+  margin-bottom: 1.5rem;
+}
+
+.checkbox .form-check-input {
+  border: 2px solid #cbd5e0;
+  border-radius: 4px;
+  width: 1.1em;
+  height: 1.1em;
+  margin-right: 0.5rem;
+}
+
+.checkbox .form-check-input:checked {
+  background-color: #76b07f;
+  border-color: #76b07f;
+}
+
+.checkbox .form-check-input:focus {
+  box-shadow: 0 0 0 3px rgba(118, 176, 127, 0.1);
+  border-color: #76b07f;
+}
+
+.checkbox .form-check-label {
+  color: #e2e8f0;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* Login Button */
+.loginButton {
+  width: 100%;
+  padding: 0.875rem 1.5rem;
+  background: #76b07f;
+  border: none;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 1.1rem;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  margin-top: 0.5rem;
+}
+
+.loginButton:hover:not(:disabled) {
+  background: #5a8f63;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(90, 143, 99, 0.3);
+}
+
+.loginButton:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.loginButton:disabled {
+  background: #a0aec0;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.spinner {
+  margin-right: 0.5rem;
+}
+
+/* Alert */
+.alert {
+  border-radius: 6px;
+  border: none;
+  border-left: 4px solid;
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.25rem;
+}
+
+.alert-danger {
+  background: rgba(245, 101, 101, 0.1);
+  color: #fc8181;
+  border-left-color: #fc8181;
+}
+
+/* Loading State */
+.loadingContainer {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+  .loginRow {
+    height: auto;
+    min-height: 100vh;
+  }
+  
+  .logoSection {
+    padding: 2rem;
+    min-height: 40vh;
+  }
+  
+  .logo {
+    width: 150px;
+    margin-bottom: 1.5rem;
+  }
+  
+  .welcomeText h1 {
+    font-size: 2rem;
+  }
+  
+  .welcomeText p {
+    font-size: 1rem;
+  }
+  
+  .formSection {
+    padding: 2rem;
+    min-height: 60vh;
+  }
+}
+
+@media (max-width: 768px) {
+  .logoSection {
+    min-height: 35vh;
+    padding: 1.5rem;
+  }
+  
+  .formSection {
+    padding: 1.5rem;
+    min-height: 65vh;
+  }
+  
+  .formContainer {
+    max-width: 100%;
+  }
+  
+  .formHeader h2 {
+    font-size: 1.6rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .logoSection {
+    padding: 1rem;
+    min-height: 30vh;
+  }
+  
+  .formSection {
+    padding: 1rem;
+    min-height: 70vh;
+  }
+  
+  .logo {
+    width: 140px;
+    margin-bottom: 1rem;
+  }
+  
+  .welcomeText h1 {
+    font-size: 1.6rem;
+  }
+  
+  .welcomeText p {
+    font-size: 0.95rem;
+  }
+  
+  .formHeader h2 {
+    font-size: 1.4rem;
+  }
+  
+  .formControl {
+    padding: 0.625rem 0.875rem;
+  }
+  
+  .loginButton {
+    padding: 0.75rem 1.25rem;
+    font-size: 1rem;
+  }
+}
+
+/* Remove all extra padding/margin issues */
+@media (max-width: 480px) {
+  .loginContainer {
+    padding: 0;
+  }
+  
+  .mainContainer {
+    padding: 0;
+  }
+  
+  .logoSection {
+    padding: 1rem;
+  }
+  
+  .formSection {
+    padding: 1rem;
+  }
+  
+  .formContainer {
+    padding: 0;
+  }
+}

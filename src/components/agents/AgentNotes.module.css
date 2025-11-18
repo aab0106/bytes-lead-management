@@ -1,0 +1,95 @@
+.notesCard {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  background: white;
+  height: fit-content;
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+}
+
+.notesHeader {
+  background: linear-gradient(135deg, #76b07f, #5a8f63);
+  color: white;
+  border: none;
+  padding: 1.25rem;
+}
+
+.notesTitle {
+  margin: 0;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.notesSubtitle {
+  opacity: 0.9;
+  font-size: 0.8rem;
+}
+
+.notesBody {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+}
+
+.messageAlert {
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.notesTextarea {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  resize: vertical;
+  font-family: 'Inter', sans-serif;
+  line-height: 1.6;
+  padding: 1rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  flex: 1;
+  min-height: 200px;
+  max-height: 300px;
+  white-space: pre-wrap;
+}
+
+.notesTextarea:focus {
+  border-color: #76b07f;
+  box-shadow: 0 0 0 3px rgba(118, 176, 127, 0.1);
+  outline: none;
+}
+
+.notesTextarea::placeholder {
+  color: #a0aec0;
+}
+
+.notesFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+
+.autoSaveText {
+  color: #718096;
+  font-size: 0.8rem;
+}
+
+.notesFooter .btn {
+  font-size: 0.8rem;
+  padding: 0.25rem 0.75rem;
+}
+
+@media (max-width: 992px) {
+  .notesCard {
+    position: static;
+    margin-top: 2rem;
+  }
+  
+  .notesTextarea {
+    rows: 6;
+  }
+}

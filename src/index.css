@@ -1,0 +1,87 @@
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+/* Light theme (default) */
+:root{
+  /* core */
+  --primary-500: #03407D;   /* main brand color (provided) */
+  --primary-400: #337BAF;   /* hover border in your table */
+  --primary-200: #99BDD7;   /* border variant */
+  --primary-50:  #E6EEF5;   /* light/bg variant */
+
+  /* neutrals */
+  --bg: #FFFFFF;
+  --surface: #F8FAFB;
+  --muted: #6B7D8E;
+  --text: #07243F;
+  --inverse-text: #FFFFFF;
+
+  /* utility */
+  --success: #16A34A;
+  --danger:  #EF4444;
+  --shadow:  0 6px 18px rgba(3,64,125,0.08);
+  --radius: 8px;
+}
+
+/* Dark theme applied when [data-theme="dark"] is present on <html> */
+[data-theme="dark"] {
+  --primary-500: #7FB3E6;   /* lighter/contrasting accent for dark surfaces */
+  --primary-400: #5BA0DB;
+  --primary-200: #2E74A7;
+  --primary-50:  rgba(127,179,230,0.08);
+
+  --bg: #01101E;            /* deep navy / almost-black */
+  --surface: #0E1A2A;       /* cards, panels */
+  --muted: #9FB7D2;
+  --text: #E6EEF5;
+  --inverse-text: #021025;
+
+  --shadow: 0 8px 24px rgba(2,6,12,0.6);
+}
+
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background: var(--bg);
+  color: var(--text);
+  transition: background var(--transition), color var(--transition);
+}
+
+/* Example reusable classes */
+.app-container {
+  min-height: 100vh;
+  padding: 1rem;
+  background: var(--bg);
+  color: var(--text);
+}
+.card {
+  background: var(--card);
+  color: var(--text);
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  transition: background var(--transition), color var(--transition);
+}
+.btn {
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  border: 0;
+  cursor: pointer;
+  background: var(--primary);
+  color: white;
+}

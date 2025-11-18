@@ -1,0 +1,155 @@
+.leadFormPage {
+  padding: 2rem;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 50%, #dee2e6 100%);
+  min-height: 100vh;
+}
+
+.pageHeader {
+  text-align: center;
+  margin-bottom: 2rem;
+  position: relative;
+}
+
+.backButton {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: white;
+  color: #2d3748;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.backButton:hover {
+  background: #f8f9fa;
+  transform: translateY(-50%) translateX(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.pageTitle {
+  color: #2d3748;
+  font-weight: 700;
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.pageSubtitle {
+  color: #718096;
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.formCard {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  background: white;
+  margin-bottom: 2rem;
+}
+
+.cardBody {
+  padding: 2.5rem;
+}
+
+.formLabel {
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.formControl {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.formControl:focus {
+  border-color: #76b07f;
+  box-shadow: 0 0 0 3px rgba(118, 176, 127, 0.1);
+  outline: none;
+}
+
+.formControl::placeholder {
+  color: #a0aec0;
+}
+
+.submitButton {
+  background: linear-gradient(135deg, #76b07f, #5a8f63);
+  border: none;
+  border-radius: 8px;
+  padding: 0.875rem 2rem;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(118, 176, 127, 0.3);
+}
+
+.submitButton:hover:not(:disabled) {
+  background: linear-gradient(135deg, #5a8f63, #4a7a52);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(118, 176, 127, 0.4);
+}
+
+.submitButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .leadFormPage {
+    padding: 1rem;
+  }
+  
+  .pageHeader {
+    text-align: center;
+    margin-bottom: 1.5rem;
+  }
+  
+  .backButton {
+    position: relative;
+    margin-bottom: 1rem;
+    transform: none;
+    left: auto;
+    top: auto;
+  }
+  
+  .pageTitle {
+    font-size: 1.5rem;
+  }
+  
+  .cardBody {
+    padding: 1.5rem;
+  }
+  
+  .formCard {
+    margin-bottom: 1rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .cardBody {
+    padding: 1rem;
+  }
+  
+  .formControl {
+    padding: 0.625rem 0.875rem;
+    font-size: 0.9rem;
+  }
+  
+  .submitButton {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.9rem;
+  }
+}
