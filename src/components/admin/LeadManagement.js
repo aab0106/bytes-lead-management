@@ -5,10 +5,13 @@ import {
   Pagination
 } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
+import * as XLSX from 'xlsx';
 import { adminService } from '../../services/adminService';
 import { exportService } from '../../services/exportService';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import AdminLayout from '../layout/AdminLayout';
+import styles from './LeadManagement.module.css';
 
 const LeadManagement = () => {
   const [leads, setLeads] = useState([]);
@@ -17,9 +20,22 @@ const LeadManagement = () => {
   const [error, setError] = useState('');
   const [exportLoading, setExportLoading] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [showBulkAssignModal, setShowBulkAssignModal] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
+  const [selectedLeads, setSelectedLeads] = useState(new Set());
+  const [agents, setAgents] = useState([]);
+  const [selectedAgent, setSelectedAgent] = useState('');
+  const [importMethod, setImportMethod] = useState('csv');
+  const [importFile, setImportFile] = useState(null);
+  const [importData, setImportData] = useState('');
+  const [importLoading, setImportLoading] = useState(false);
+  const [bulkAssignLoading, setBulkAssignLoading] = useState(false);
+  const [assignOnImport, setAssignOnImport] = useState(false);
+  const [importAgent, setImportAgent] = useState('');
   const [lastUpdatedTime, setLastUpdatedTime] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [importResult, setImportResult] = useState(null);
   const [filters, setFilters] = useState({
     status: '',
     source: ''
@@ -32,7 +48,7 @@ const LeadManagement = () => {
   const { isAdmin, currentUser } = useAuth();
   const navigate = useNavigate();
 
-  // Helper functions - moved before their usage
+  // Helper functions
   const hasActiveFilters = () => {
     return Object.values(filters).some(value => value !== '');
   };
@@ -56,6 +72,7 @@ const LeadManagement = () => {
     clearSearch();
     clearFilters();
     setCurrentPage(1);
+    setSelectedLeads(new Set());
   };
 
   const displayLeads = (searchTerm || hasActiveFilters()) ? filteredLeads : leads;
@@ -66,11 +83,12 @@ const LeadManagement = () => {
       return;
     }
     loadLeads();
+    loadAgents();
   }, [isAdmin, navigate]);
 
   useEffect(() => {
     filterLeads();
-    setCurrentPage(1); // Reset to first page when filters change
+    setCurrentPage(1);
   }, [leads, searchTerm, filters]);
 
   const loadLeads = async () => {
@@ -82,6 +100,15 @@ const LeadManagement = () => {
       setError('Error loading leads: ' + err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadAgents = async () => {
+    try {
+      const agentsData = await adminService.getAllAgents();
+      setAgents(agentsData.filter(agent => !agent.blocked && agent.isActive));
+    } catch (err) {
+      console.error('Error loading agents:', err);
     }
   };
 
@@ -116,6 +143,167 @@ const LeadManagement = () => {
     setFilteredLeads(filtered);
   };
 
+  // Selection handlers
+  const handleSelectLead = (leadId) => {
+    const newSelected = new Set(selectedLeads);
+    if (newSelected.has(leadId)) {
+      newSelected.delete(leadId);
+    } else {
+      newSelected.add(leadId);
+    }
+    setSelectedLeads(newSelected);
+  };
+
+  const handleSelectAll = () => {
+    if (selectedLeads.size === currentLeads.length) {
+      setSelectedLeads(new Set());
+    } else {
+      const allIds = new Set(currentLeads.map(lead => lead.id));
+      setSelectedLeads(allIds);
+    }
+  };
+
+  // Bulk assignment
+  const handleBulkAssign = async () => {
+    if (!selectedAgent) {
+      setError('Please select an agent to assign leads');
+      return;
+    }
+
+    if (selectedLeads.size === 0) {
+      setError('Please select at least one lead to assign');
+      return;
+    }
+
+    try {
+      setBulkAssignLoading(true);
+      const agent = agents.find(a => a.id === selectedAgent);
+      await adminService.bulkAssignLeads(
+        Array.from(selectedLeads), 
+        selectedAgent, 
+        agent.email,
+        currentUser.uid
+      );
+      
+      setSelectedLeads(new Set());
+      setSelectedAgent('');
+      setShowBulkAssignModal(false);
+      await loadLeads();
+      setError('');
+    } catch (err) {
+      setError('Error assigning leads: ' + err.message);
+    } finally {
+      setBulkAssignLoading(false);
+    }
+  };
+
+ const handleImportLeads = async () => {
+  try {
+    setImportLoading(true);
+    setError('');
+    setImportResult(null);
+    
+    let leadsData = [];
+
+    if (importMethod === 'csv' && importData.trim()) {
+      // Parse CSV data
+      const lines = importData.trim().split('\n');
+      const headers = lines[0].split(',').map(h => h.trim());
+      leadsData = lines.slice(1).map(line => {
+        const values = line.split(',').map(v => v.trim());
+        const lead = {};
+        headers.forEach((header, index) => {
+          lead[header] = values[index] || '';
+        });
+        return lead;
+      });
+    } else if (importMethod === 'excel' && importFile) {
+      // Parse Excel file
+      const reader = new FileReader();
+      const promise = new Promise((resolve, reject) => {
+        reader.onload = (e) => {
+          try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet);
+            resolve(jsonData);
+          } catch (error) {
+            reject(error);
+          }
+        };
+        reader.onerror = reject;
+      });
+
+      reader.readAsArrayBuffer(importFile);
+      leadsData = await promise;
+    } else {
+      setError('Please provide data to import');
+      return;
+    }
+
+    if (leadsData.length === 0) {
+      setError('No valid data found to import');
+      return;
+    }
+
+    // Process import with assignment if selected
+    let importResult;
+    if (assignOnImport && importAgent) {
+      const agent = agents.find(a => a.id === importAgent);
+      if (!agent) {
+        setError('Selected agent not found');
+        return;
+      }
+      
+      // Import and assign in batch
+      importResult = await adminService.importAndAssignLeads(
+        leadsData, 
+        importAgent, 
+        agent.email,
+        currentUser.uid
+      );
+    } else {
+      // Regular import
+      importResult = await adminService.importLeads(leadsData, currentUser.uid);
+    }
+
+    setImportResult(importResult);
+    setImportData('');
+    setImportFile(null);
+    setImportAgent('');
+    setAssignOnImport(false);
+    
+    await loadLeads();
+    
+  } catch (err) {
+    setError('Error importing leads: ' + err.message);
+  } finally {
+    setImportLoading(false);
+  }
+};
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Check if file is Excel
+      const validTypes = [
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      ];
+      
+      if (!validTypes.includes(file.type) && !file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+        setError('Please upload a valid Excel file (.xlsx or .xls)');
+        return;
+      }
+      
+      setImportFile(file);
+      setError('');
+    }
+  };
+
   // Pagination logic
   const indexOfLastLead = currentPage * leadsPerPage;
   const indexOfFirstLead = indexOfLastLead - leadsPerPage;
@@ -126,39 +314,6 @@ const LeadManagement = () => {
   const totalLeads = (searchTerm || hasActiveFilters()) ? filteredLeads.length : leads.length;
   const totalPages = Math.ceil(totalLeads / leadsPerPage);
 
-  // Generate page numbers for pagination
-  const pageNumbers = [];
-  for (let i = 1; i <= totalPages; i++) {
-    pageNumbers.push(i);
-  }
-
-  // Get visible page numbers (max 5 pages shown)
-  const getVisiblePages = () => {
-    const delta = 2;
-    const range = [];
-    const rangeWithDots = [];
-
-    for (let i = Math.max(2, currentPage - delta); i <= Math.min(totalPages - 1, currentPage + delta); i++) {
-      range.push(i);
-    }
-
-    if (currentPage - delta > 2) {
-      rangeWithDots.push(1, '...');
-    } else {
-      rangeWithDots.push(1);
-    }
-
-    rangeWithDots.push(...range);
-
-    if (currentPage + delta < totalPages - 1) {
-      rangeWithDots.push('...', totalPages);
-    } else if (totalPages > 1) {
-      rangeWithDots.push(totalPages);
-    }
-
-    return rangeWithDots;
-  };
-
   const calculateLastUpdatedTime = (leadsData) => {
     if (!leadsData || leadsData.length === 0) {
       setLastUpdatedTime(null);
@@ -166,10 +321,8 @@ const LeadManagement = () => {
     }
 
     let latestTime = null;
-
     leadsData.forEach(lead => {
       let leadTime = null;
-
       if (lead.lastModified && lead.lastModified.seconds) {
         leadTime = new Date(lead.lastModified.seconds * 1000);
       }
@@ -191,7 +344,6 @@ const LeadManagement = () => {
   const handleExport = async (format = 'excel') => {
     try {
       setExportLoading(true);
-
       const dataToExport = (searchTerm || hasActiveFilters()) ? filteredLeads : leads;
 
       if (dataToExport.length === 0) {
@@ -215,7 +367,7 @@ const LeadManagement = () => {
 
   const handleStatusChange = async (leadId, newStatus) => {
     try {
-      await adminService.updateLeadStatus(leadId, newStatus);
+      await adminService.updateLeadStatus(leadId, newStatus, currentUser.uid);
       await loadLeads();
       setError('');
     } catch (err) {
@@ -230,7 +382,7 @@ const LeadManagement = () => {
 
   const handleDelete = async () => {
     try {
-      await adminService.deleteLead(selectedLead.id);
+      await adminService.deleteLead(selectedLead.id, currentUser.uid);
       await loadLeads();
       setShowDeleteModal(false);
       setSelectedLead(null);
@@ -279,62 +431,73 @@ const LeadManagement = () => {
 
   if (!isAdmin()) {
     return (
-      <Container>
-        <Alert variant="danger">Access denied. Admin privileges required.</Alert>
-      </Container>
+      <AdminLayout>
+        <Container>
+          <Alert variant="danger">Access denied. Admin privileges required.</Alert>
+        </Container>
+      </AdminLayout>
     );
   }
 
   if (loading) {
     return (
-      <Container className="text-center mt-5">
-        <Spinner animation="border" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </Spinner>
-        <p>Loading leads...</p>
-      </Container>
+      <AdminLayout>
+        <Container className="text-center mt-5">
+          <Spinner animation="border" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </Spinner>
+          <p>Loading leads...</p>
+        </Container>
+      </AdminLayout>
     );
   }
 
   return (
-    <Container>
-      <Row className="mb-4">
-        <Col>
-          <h2>Lead Management</h2>
-          <p className="text-muted">View and manage all leads in the system</p>
-        </Col>
-      </Row>
+    <AdminLayout>
+      <Container>
+        <Row className="mb-4">
+          <Col>
+            <h2>Lead Management</h2>
+            <p className="text-muted">View and manage all leads in the system</p>
+          </Col>
+        </Row>
 
-      {/* Combined Controls Card */}
-      <Card className="mb-4">
-        <Card.Body>
-          {/* Main Controls Row */}
-          <Row>
-            {/* Left Side - Stats (6 columns) */}
-            <Col md={6}>
-              <div className="d-flex flex-column">
-                <div className="mb-1">
-                  <strong className="fs-6">Total Leads: {leads.length}</strong>
-                  {(searchTerm || hasActiveFilters()) && (
-                    <span className="text-primary ms-2">
-                      • Showing: {filteredLeads.length}
-                    </span>
-                  )}
-                  {lastUpdatedTime && (
-                  <div>
-                    <small className="text-muted">
-                      Last updated: {lastUpdatedTime.toLocaleTimeString()} {lastUpdatedTime.toLocaleDateString()}
-                    </small>
+        {/* Combined Controls Card */}
+        <Card className="mb-4">
+          <Card.Body>
+            {/* Main Controls Row */}
+            <Row>
+              {/* Left Side - Stats */}
+              <Col md={6}>
+                <div className="d-flex flex-column">
+                  <div className="mb-1">
+                    <strong className="fs-6">Total Leads: {leads.length}</strong>
+                    {(searchTerm || hasActiveFilters()) && (
+                      <span className="text-primary ms-2">
+                        • Showing: {filteredLeads.length}
+                      </span>
+                    )}
+                    {selectedLeads.size > 0 && (
+                      <span className="text-success ms-2">
+                        • Selected: {selectedLeads.size}
+                      </span>
+                    )}
                   </div>
-                )}
+                  {lastUpdatedTime && (
+                    <div>
+                      <small className="text-muted">
+                        Last updated: {lastUpdatedTime.toLocaleTimeString()} {lastUpdatedTime.toLocaleDateString()}
+                      </small>
+                    </div>
+                  )}
                 </div>
-              </div>
-            </Col>
+              </Col>
 
-            {/* Right Side - Search, Filters, Export (6 columns) */}
-            <Col md={6}>
-              <div className="d-flex gap-2 justify-content-end">
-                    <InputGroup size="sm">
+              {/* Right Side - Actions */}
+              <Col md={6}>
+                <div className="d-flex gap-2 justify-content-end flex-wrap">
+                  {/* Search */}
+                  <InputGroup size="sm" style={{ width: '200px' }}>
                     <InputGroup.Text>
                       <i className="bi bi-search"></i>
                     </InputGroup.Text>
@@ -350,271 +513,186 @@ const LeadManagement = () => {
                       </Button>
                     )}
                   </InputGroup>
-                    {/* Filter Dropdowns */}
-                    {/* Status Filter */}
-                    <Dropdown>
-                      <Dropdown.Toggle
-                        variant={filters.status ? "primary" : "outline-secondary"}
-                        size="sm"
-                        className="d-flex align-items-center"
-                      >
-                        <i className="bi bi-funnel me-1"></i>
-                        Status
-                      </Dropdown.Toggle>
-                      <Dropdown.Menu>
-                        <Dropdown.Item
-                          onClick={() => setFilters(prev => ({ ...prev, status: '' }))}
-                          className={!filters.status ? 'active' : ''}
-                        >
-                          All Statuses
-                        </Dropdown.Item>
-                        <Dropdown.Divider />
-                        <Dropdown.Item
-                          onClick={() => setFilters(prev => ({ ...prev, status: 'New' }))}
-                          className={filters.status === 'New' ? 'active' : ''}
-                        >
-                          New
-                        </Dropdown.Item>
-                        <Dropdown.Item
-                          onClick={() => setFilters(prev => ({ ...prev, status: 'Contacted' }))}
-                          className={filters.status === 'Contacted' ? 'active' : ''}
-                        >
-                          Contacted
-                        </Dropdown.Item>
-                        <Dropdown.Item
-                          onClick={() => setFilters(prev => ({ ...prev, status: 'Visited' }))}
-                          className={filters.status === 'Visited' ? 'active' : ''}
-                        >
-                          Visited
-                        </Dropdown.Item>
-                        <Dropdown.Item
-                          onClick={() => setFilters(prev => ({ ...prev, status: 'Qualified' }))}
-                          className={filters.status === 'Qualified' ? 'active' : ''}
-                        >
-                          Qualified
-                        </Dropdown.Item>
-                        <Dropdown.Item
-                          onClick={() => setFilters(prev => ({ ...prev, status: 'Closed' }))}
-                          className={filters.status === 'Closed' ? 'active' : ''}
-                        >
-                          Closed
-                        </Dropdown.Item>
-                        <Dropdown.Item
-                          onClick={() => setFilters(prev => ({ ...prev, status: 'Lost' }))}
-                          className={filters.status === 'Lost' ? 'active' : ''}
-                        >
-                          Lost
-                        </Dropdown.Item>
-                      </Dropdown.Menu>
-                    </Dropdown>
 
-                    {/* Source Filter */}
-                    <Dropdown>
-                      <Dropdown.Toggle
-                        variant={filters.source ? "primary" : "outline-secondary"}
-                        size="sm"
-                        className="d-flex align-items-center"
-                      >
-                        <i className="bi bi-funnel me-1"></i>
-                        Source
-                      </Dropdown.Toggle>
-                      <Dropdown.Menu>
-                        <Dropdown.Item
-                          onClick={() => setFilters(prev => ({ ...prev, source: '' }))}
-                          className={!filters.source ? 'active' : ''}
-                        >
-                          All Sources
-                        </Dropdown.Item>
-                        <Dropdown.Divider />
-                        <Dropdown.Item
-                          onClick={() => setFilters(prev => ({ ...prev, source: 'Website' }))}
-                          className={filters.source === 'Website' ? 'active' : ''}
-                        >
-                          Website
-                        </Dropdown.Item>
-                        <Dropdown.Item
-                          onClick={() => setFilters(prev => ({ ...prev, source: 'Referral' }))}
-                          className={filters.source === 'Referral' ? 'active' : ''}
-                        >
-                          Referral
-                        </Dropdown.Item>
-                        <Dropdown.Item
-                          onClick={() => setFilters(prev => ({ ...prev, source: 'Social Media' }))}
-                          className={filters.source === 'Social Media' ? 'active' : ''}
-                        >
-                          Social Media
-                        </Dropdown.Item>
-                        <Dropdown.Item
-                          onClick={() => setFilters(prev => ({ ...prev, source: 'Walk-in' }))}
-                          className={filters.source === 'Walk-in' ? 'active' : ''}
-                        >
-                          Walk-in
-                        </Dropdown.Item>
-                        <Dropdown.Item
-                          onClick={() => setFilters(prev => ({ ...prev, source: 'Call' }))}
-                          className={filters.source === 'Call' ? 'active' : ''}
-                        >
-                          Call
-                        </Dropdown.Item>
-                        <Dropdown.Item
-                          onClick={() => setFilters(prev => ({ ...prev, source: 'Other' }))}
-                          className={filters.source === 'Other' ? 'active' : ''}
-                        >
-                          Other
-                        </Dropdown.Item>
-                      </Dropdown.Menu>
-                    </Dropdown>
-                    {/* Export Button */}
-                    <Dropdown as={ButtonGroup}>
-                      <Button
-                        variant="success"
-                        disabled={exportLoading || displayLeads.length === 0}
-                        onClick={() => handleExport('excel')}
-                        size="sm"
-                        className='d-flex gap-1'
-                      >Export
-                        {exportLoading ? (
-                          <>
-                            <span className="spinner-border spinner-border-sm me-1"></span>
-                          </>
-                        ) : (
-                          <>
-                            <i className="bi bi-file-earmark-excel"></i>
-                          </>
-                        )}
-                      </Button>
-                      <Dropdown.Toggle split variant="success" size="sm" />
-                      <Dropdown.Menu>
-                        <Dropdown.Item onClick={() => handleExport('excel')}>
-                          <i className="bi bi-file-earmark-excel me-2"></i>
-                          Export to Excel
-                        </Dropdown.Item>
-                        <Dropdown.Item onClick={() => handleExport('csv')}>
-                          <i className="bi bi-file-earmark-text me-2"></i>
-                          Export to CSV
-                        </Dropdown.Item>
-                      </Dropdown.Menu>
-                    </Dropdown>
-                  </div>
-            </Col>
-          </Row>
+                  {/* Bulk Actions */}
+                  {selectedLeads.size > 0 && (
+                    <Button
+                      variant="warning"
+                      size="sm"
+                      onClick={() => setShowBulkAssignModal(true)}
+                    >
+                      <i className="bi bi-person-plus me-1"></i>
+                      Assign Selected ({selectedLeads.size})
+                    </Button>
+                  )}
 
-          {/* Active Filters Display */}
-          {(searchTerm || hasActiveFilters()) && (
+                  {/* Import Button */}
+                  <Button
+                    variant="outline-primary"
+                    size="sm"
+                    onClick={() => setShowImportModal(true)}
+                  >
+                    <i className="bi bi-upload me-1"></i>
+                    Import Leads
+                  </Button>
+
+                  {/* Export Button */}
+                  <Dropdown as={ButtonGroup}>
+                    <Button
+                      variant="success"
+                      disabled={exportLoading || displayLeads.length === 0}
+                      onClick={() => handleExport('excel')}
+                      size="sm"
+                    >
+                      {exportLoading ? (
+                        <Spinner animation="border" size="sm" />
+                      ) : (
+                        <>
+                          <i className="bi bi-download me-1"></i>
+                          Export
+                        </>
+                      )}
+                    </Button>
+                    <Dropdown.Toggle split variant="success" size="sm" />
+                    <Dropdown.Menu>
+                      <Dropdown.Item onClick={() => handleExport('excel')}>
+                        <i className="bi bi-file-earmark-excel me-2"></i>
+                        Export to Excel
+                      </Dropdown.Item>
+                      <Dropdown.Item onClick={() => handleExport('csv')}>
+                        <i className="bi bi-file-earmark-text me-2"></i>
+                        Export to CSV
+                      </Dropdown.Item>
+                    </Dropdown.Menu>
+                  </Dropdown>
+                </div>
+              </Col>
+            </Row>
+
+            {/* Filters Row */}
             <Row className="mt-3">
               <Col>
-                <div className="d-flex align-items-center gap-2 flex-wrap">
-                  <small className="text-muted">Active filters:</small>
+                <div className="d-flex gap-2 flex-wrap">
+                  {/* Status Filter */}
+                  <Dropdown>
+                    <Dropdown.Toggle
+                      variant={filters.status ? "primary" : "outline-secondary"}
+                      size="sm"
+                    >
+                      <i className="bi bi-funnel me-1"></i>
+                      Status
+                    </Dropdown.Toggle>
+                    <Dropdown.Menu>
+                      <Dropdown.Item onClick={() => setFilters(prev => ({ ...prev, status: '' }))}>
+                        All Statuses
+                      </Dropdown.Item>
+                      <Dropdown.Divider />
+                      {['New', 'Contacted', 'Visited', 'Qualified', 'Closed', 'Lost'].map(status => (
+                        <Dropdown.Item
+                          key={status}
+                          onClick={() => setFilters(prev => ({ ...prev, status }))}
+                          active={filters.status === status}
+                        >
+                          {status}
+                        </Dropdown.Item>
+                      ))}
+                    </Dropdown.Menu>
+                  </Dropdown>
 
-                  {searchTerm && (
-                    <Badge bg="info" className="d-flex align-items-center px-2 py-1">
-                      Search: "{searchTerm}"
-                      <Button
-                        variant="link"
-                        className="text-white p-0 ms-2 border-0"
-                        style={{ fontSize: '0.7em' }}
-                        onClick={clearSearch}
-                      >
-                        <i className="bi bi-x"></i>
-                      </Button>
-                    </Badge>
-                  )}
+                  {/* Source Filter */}
+                  <Dropdown>
+                    <Dropdown.Toggle
+                      variant={filters.source ? "primary" : "outline-secondary"}
+                      size="sm"
+                    >
+                      <i className="bi bi-funnel me-1"></i>
+                      Source
+                    </Dropdown.Toggle>
+                    <Dropdown.Menu>
+                      <Dropdown.Item onClick={() => setFilters(prev => ({ ...prev, source: '' }))}>
+                        All Sources
+                      </Dropdown.Item>
+                      <Dropdown.Divider />
+                      {['Website', 'Referral', 'Social Media', 'Walk-in', 'Call', 'Other'].map(source => (
+                        <Dropdown.Item
+                          key={source}
+                          onClick={() => setFilters(prev => ({ ...prev, source }))}
+                          active={filters.source === source}
+                        >
+                          {source}
+                        </Dropdown.Item>
+                      ))}
+                    </Dropdown.Menu>
+                  </Dropdown>
 
-                  {filters.status && (
-                    <Badge bg="secondary" className="d-flex align-items-center px-2 py-1">
-                      Status: {filters.status}
-                      <Button
-                        variant="link"
-                        className="text-white p-0 ms-2 border-0"
-                        style={{ fontSize: '0.7em' }}
-                        onClick={() => setFilters(prev => ({ ...prev, status: '' }))}
-                      >
-                        <i className="bi bi-x"></i>
-                      </Button>
-                    </Badge>
-                  )}
-
-                  {filters.source && (
-                    <Badge bg="secondary" className="d-flex align-items-center px-2 py-1">
-                      Source: {filters.source}
-                      <Button
-                        variant="link"
-                        className="text-white p-0 ms-2 border-0"
-                        style={{ fontSize: '0.7em' }}
-                        onClick={() => setFilters(prev => ({ ...prev, source: '' }))}
-                      >
-                        <i className="bi bi-x"></i>
-                      </Button>
-                    </Badge>
+                  {/* Clear All */}
+                  {(searchTerm || hasActiveFilters() || selectedLeads.size > 0) && (
+                    <Button variant="outline-danger" size="sm" onClick={clearAll}>
+                      Clear All
+                    </Button>
                   )}
                 </div>
               </Col>
             </Row>
-          )}
-          {(searchTerm || hasActiveFilters()) && (
-                  <div className="mt-2">
-                    <Button variant="outline-danger" size="sm" onClick={clearAll}>
-                      Clear Filters
-                    </Button>
-                  </div>
-                )}
-        </Card.Body>
-      </Card>
+          </Card.Body>
+        </Card>
 
-      {error && <Alert variant="danger">{error}</Alert>}
+        {error && <Alert variant="danger">{error}</Alert>}
 
-      {/* Leads Table Card */}
-      <Card>
-        <Card.Header className="d-flex justify-content-between align-items-center">
-          <h5 className="mb-0">
-            {(searchTerm || hasActiveFilters()) ? 'Filtered Leads' : 'All Leads'}
-          </h5>
-          <div className="d-flex align-items-center gap-3">
-            <Badge bg={(searchTerm || hasActiveFilters()) ? 'info' : 'primary'} pill>
-              {displayLeads.length} {(searchTerm || hasActiveFilters()) ? 'filtered' : 'total'} leads
-            </Badge>
-            
-            {/* Items per page selector */}
-            <div className="d-flex align-items-center">
-              <small className="text-muted me-2">Show:</small>
-              <Form.Select 
-                size="sm" 
-                style={{ width: '80px' }}
-                value={leadsPerPage}
-                onChange={(e) => {
-                  setLeadsPerPage(Number(e.target.value));
-                  setCurrentPage(1);
-                }}
-              >
-                <option value={5}>5</option>
-                <option value={10}>10</option>
-                <option value={20}>20</option>
-                <option value={50}>50</option>
-                <option value={100}>100</option>
-              </Form.Select>
+        {/* Leads Table Card */}
+        <Card>
+          <Card.Header className="d-flex justify-content-between align-items-center">
+            <h5 className="mb-0">
+              {(searchTerm || hasActiveFilters()) ? 'Filtered Leads' : 'All Leads'}
+            </h5>
+            <div className="d-flex align-items-center gap-3">
+              <Badge bg={(searchTerm || hasActiveFilters()) ? 'info' : 'primary'} pill>
+                {displayLeads.length} {(searchTerm || hasActiveFilters()) ? 'filtered' : 'total'} leads
+              </Badge>
+              
+              {/* Items per page selector */}
+              <div className="d-flex align-items-center">
+                <small className="text-muted me-2">Show:</small>
+                <Form.Select 
+                  size="sm" 
+                  style={{ width: '80px' }}
+                  value={leadsPerPage}
+                  onChange={(e) => {
+                    setLeadsPerPage(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </Form.Select>
+              </div>
             </div>
-          </div>
-        </Card.Header>
+          </Card.Header>
+
           {displayLeads.length === 0 ? (
-            <Alert variant="info">
+            <Alert variant="info" className="m-3">
               {(searchTerm || hasActiveFilters()) ? 'No leads found matching your search criteria.' : 'No leads found in the system.'}
               {(searchTerm || hasActiveFilters()) && (
                 <Button variant="outline-primary" className="ms-2" onClick={clearAll}>
                   Clear Filters
                 </Button>
               )}
-              {!searchTerm && !hasActiveFilters() && (
-                <Button variant="outline-primary" className="ms-2" as="a" href="/add-lead">
-                  Create First Lead
-                </Button>
-              )}
             </Alert>
           ) : (
             <>
-              <Table responsive striped hover>
+              <Table responsive striped hover className="mb-0">
                 <thead>
                   <tr>
-                    <th>ID</th>
+                    <th style={{ width: '40px' }}>
+                      <Form.Check
+                        type="checkbox"
+                        checked={selectedLeads.size === currentLeads.length && currentLeads.length > 0}
+                        onChange={handleSelectAll}
+                        indeterminate={selectedLeads.size > 0 && selectedLeads.size < currentLeads.length}
+                      />
+                    </th>
                     <th>Lead Info</th>
                     <th>Contact</th>
                     <th>Source</th>
@@ -632,7 +710,11 @@ const LeadManagement = () => {
                     return (
                       <tr key={lead.id}>
                         <td>
-                          <strong>{actualIndex + 1}</strong>
+                          <Form.Check
+                            type="checkbox"
+                            checked={selectedLeads.has(lead.id)}
+                            onChange={() => handleSelectLead(lead.id)}
+                          />
                         </td>
                         <td>
                           <strong>{lead.fullName}</strong>
@@ -649,15 +731,20 @@ const LeadManagement = () => {
                           </Badge>
                         </td>
                         <td>
-                          <Badge bg="light" text="dark">
-                            {lead.assignedAgentEmail || 'Unassigned'}
-                          </Badge>
+                          {lead.assignedAgentEmail ? (
+                            <Badge bg="success">
+                              {lead.assignedAgentEmail}
+                            </Badge>
+                          ) : (
+                            <Badge bg="secondary">Unassigned</Badge>
+                          )}
                         </td>
                         <td>
                           <Form.Select
                             size="sm"
                             value={lead.status}
                             onChange={(e) => handleStatusChange(lead.id, e.target.value)}
+                            style={{ width: '120px' }}
                           >
                             <option value="New">New</option>
                             <option value="Contacted">Contacted</option>
@@ -682,9 +769,10 @@ const LeadManagement = () => {
                           <div className="d-flex gap-1">
                             <Button
                               as={Link}
-                              to={`/lead/${lead.id}`}
+                              to={`/admin/leads/${lead.id}`}
                               variant="outline-primary"
                               size="sm"
+                              title="View Lead"
                             >
                               <i className="bi bi-eye"></i>
                             </Button>
@@ -692,6 +780,7 @@ const LeadManagement = () => {
                               variant="outline-danger"
                               size="sm"
                               onClick={() => confirmDelete(lead)}
+                              title="Delete Lead"
                             >
                               <i className="bi bi-trash"></i>
                             </Button>
@@ -705,7 +794,7 @@ const LeadManagement = () => {
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="d-flex justify-content-between align-items-center mt-4">
+                <div className="d-flex justify-content-between align-items-center p-3 border-top">
                   <div>
                     <small className="text-muted">
                       Showing {indexOfFirstLead + 1} to {Math.min(indexOfLastLead, totalLeads)} of {totalLeads} entries
@@ -722,18 +811,14 @@ const LeadManagement = () => {
                       disabled={currentPage === 1}
                     />
                     
-                    {getVisiblePages().map((page, index) => (
-                      page === '...' ? (
-                        <Pagination.Ellipsis key={index} disabled />
-                      ) : (
-                        <Pagination.Item
-                          key={index}
-                          active={page === currentPage}
-                          onClick={() => setCurrentPage(page)}
-                        >
-                          {page}
-                        </Pagination.Item>
-                      )
+                    {[...Array(totalPages)].map((_, index) => (
+                      <Pagination.Item
+                        key={index + 1}
+                        active={index + 1 === currentPage}
+                        onClick={() => setCurrentPage(index + 1)}
+                      >
+                        {index + 1}
+                      </Pagination.Item>
                     ))}
                     
                     <Pagination.Next 
@@ -749,27 +834,213 @@ const LeadManagement = () => {
               )}
             </>
           )}
-      </Card>
+        </Card>
 
-      {/* Delete Confirmation Modal */}
-      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Confirm Delete</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          Are you sure you want to delete lead for <strong>{selectedLead?.fullName}</strong>?
-          This action cannot be undone.
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
-            Cancel
-          </Button>
-          <Button variant="danger" onClick={handleDelete}>
-            Delete Lead
-          </Button>
-        </Modal.Footer>
-      </Modal>
-    </Container>
+        {/* Delete Confirmation Modal */}
+        <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
+          <Modal.Header closeButton>
+            <Modal.Title>Confirm Delete</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            Are you sure you want to delete lead for <strong>{selectedLead?.fullName}</strong>?
+            This action cannot be undone.
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
+              Cancel
+            </Button>
+            <Button variant="danger" onClick={handleDelete}>
+              Delete Lead
+            </Button>
+          </Modal.Footer>
+        </Modal>
+
+        {/* Import Leads Modal */}
+        <Modal show={showImportModal} onHide={() => {
+  setShowImportModal(false);
+  setImportResult(null);
+}} size="lg">
+  <Modal.Header closeButton>
+    <Modal.Title>Import Leads</Modal.Title>
+  </Modal.Header>
+  <Modal.Body>
+    {/* Show import results if available */}
+    {importResult && (
+      <Alert variant={importResult.summary.duplicates > 0 ? "warning" : "success"}>
+        <strong>Import Summary:</strong>
+        <br />
+        ✅ Imported: {importResult.summary.imported} leads
+        <br />
+        {importResult.summary.duplicates > 0 && (
+          <>
+            ⚠️ Skipped: {importResult.summary.duplicates} duplicates
+            <br />
+            <small className="text-muted">
+              Duplicate leads were skipped to maintain data integrity.
+            </small>
+          </>
+        )}
+      </Alert>
+    )}
+
+    {/* Import Method Selection */}
+    <Form.Group className="mb-3">
+      <Form.Label>Import Method</Form.Label>
+      <div>
+        <Form.Check
+          inline
+          type="radio"
+          label="CSV Text"
+          name="importMethod"
+          value="csv"
+          checked={importMethod === 'csv'}
+          onChange={(e) => setImportMethod(e.target.value)}
+        />
+        <Form.Check
+          inline
+          type="radio"
+          label="Excel File"
+          name="importMethod"
+          value="excel"
+          checked={importMethod === 'excel'}
+          onChange={(e) => setImportMethod(e.target.value)}
+        />
+      </div>
+    </Form.Group>
+
+    {/* CSV Input */}
+    {importMethod === 'csv' && (
+      <Form.Group className="mb-3">
+        <Form.Label>Paste CSV Data</Form.Label>
+        <Form.Control
+          as="textarea"
+          rows={8}
+          placeholder="Paste CSV data with headers: fullName,email,mobileNo,propertyType,budget,location,source,notes"
+          value={importData}
+          onChange={(e) => setImportData(e.target.value)}
+        />
+        <Form.Text className="text-muted">
+          Format: CSV with headers on first line. Example:<br />
+          fullName,email,mobileNo,propertyType,budget,location,source,notes<br />
+          John Doe,john@example.com,1234567890,Apartment,5000000,New York,Website,Interested in 2BHK
+        </Form.Text>
+      </Form.Group>
+    )}
+
+    {/* Excel File Input */}
+    {importMethod === 'excel' && (
+      <Form.Group className="mb-3">
+        <Form.Label>Upload Excel File</Form.Label>
+        <Form.Control
+          type="file"
+          accept=".xlsx,.xls"
+          onChange={handleFileUpload}
+        />
+        <Form.Text className="text-muted">
+          Upload Excel file with columns: fullName, email, mobileNo, propertyType, budget, location, source, notes
+        </Form.Text>
+        {importFile && (
+          <div className="mt-2">
+            <Badge bg="success">Selected: {importFile.name}</Badge>
+          </div>
+        )}
+      </Form.Group>
+    )}
+
+    {/* Assignment Option */}
+    <Form.Group className="mb-3">
+      <Form.Check
+        type="checkbox"
+        label="Assign imported leads to agent"
+        checked={assignOnImport}
+        onChange={(e) => setAssignOnImport(e.target.checked)}
+      />
+    </Form.Group>
+
+    {assignOnImport && (
+      <Form.Group className="mb-3">
+        <Form.Label>Select Agent</Form.Label>
+        <Form.Select 
+          value={importAgent} 
+          onChange={(e) => setImportAgent(e.target.value)}
+        >
+          <option value="">Choose an agent...</option>
+          {agents.map(agent => (
+            <option key={agent.id} value={agent.id}>
+              {agent.firstName} {agent.lastName} ({agent.email})
+            </option>
+          ))}
+        </Form.Select>
+      </Form.Group>
+    )}
+  </Modal.Body>
+  <Modal.Footer>
+    <Button variant="secondary" onClick={() => {
+      setShowImportModal(false);
+      setImportResult(null);
+    }}>
+      Cancel
+    </Button>
+    <Button 
+      variant="primary" 
+      onClick={handleImportLeads}
+      disabled={importLoading || 
+        (importMethod === 'csv' && !importData.trim()) || 
+        (importMethod === 'excel' && !importFile) ||
+        (assignOnImport && !importAgent)
+      }
+    >
+      {importLoading ? (
+        <>
+          <Spinner animation="border" size="sm" className="me-2" />
+          Importing...
+        </>
+      ) : (
+        'Import Leads'
+      )}
+    </Button>
+  </Modal.Footer>
+</Modal>
+
+        {/* Bulk Assign Modal */}
+        <Modal show={showBulkAssignModal} onHide={() => setShowBulkAssignModal(false)}>
+          <Modal.Header closeButton>
+            <Modal.Title>Bulk Assign Leads</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Form.Group>
+              <Form.Label>Select Agent</Form.Label>
+              <Form.Select 
+                value={selectedAgent} 
+                onChange={(e) => setSelectedAgent(e.target.value)}
+              >
+                <option value="">Choose an agent...</option>
+                {agents.map(agent => (
+                  <option key={agent.id} value={agent.id}>
+                    {agent.firstName} {agent.lastName} ({agent.email})
+                  </option>
+                ))}
+              </Form.Select>
+              <Form.Text className="text-muted">
+                Assigning {selectedLeads.size} selected leads to the chosen agent.
+              </Form.Text>
+            </Form.Group>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowBulkAssignModal(false)}>
+              Cancel
+            </Button>
+            <Button 
+              variant="warning" 
+              onClick={handleBulkAssign}
+              disabled={bulkAssignLoading || !selectedAgent}
+            >
+              {bulkAssignLoading ? 'Assigning...' : `Assign ${selectedLeads.size} Leads`}
+            </Button>
+          </Modal.Footer>
+        </Modal>
+      </Container>
+    </AdminLayout>
   );
 };
 

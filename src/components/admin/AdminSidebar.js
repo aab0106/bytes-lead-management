@@ -2,11 +2,10 @@ import React, { useState } from 'react';
 import { Nav, Button, Offcanvas } from 'react-bootstrap';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import styles from './Sidebar.module.css';
+import styles from './AdminSidebar.module.css';
 
-const Sidebar = () => {
+const AdminSidebar = () => {
   const [showMobile, setShowMobile] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
   const { currentUser, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -20,21 +19,21 @@ const Sidebar = () => {
     }
   };
 
-  const menuItems = [
-    { path: '/dashboard', icon: '📊', label: 'Dashboard' },
-    { path: '/leads', icon: '👥', label: 'My Leads' },
-    { path: '/profile', icon: '👤', label: 'Profile' },
+  const adminMenuItems = [
+    { path: '/admin/analytics', icon: '📊', label: 'Analytics' },
+    { path: '/admin/leads', icon: '👥', label: 'Leads' },
+    { path: '/admin/settings', icon: '⚙️', label: 'Settings' },
+    { path: '/admin/teams', icon: '👨‍💼', label: 'Teams', comingSoon: true },
+    { path: '/admin/roles', icon: '🎭', label: 'Roles', comingSoon: true },
   ];
 
   const SidebarContent = ({ isMobile = false }) => (
-    <div className={`${styles.sidebar} ${
-      !isMobile && (isHovered ? styles.expanded : styles.collapsed)
-    } ${isMobile ? styles.mobileSidebar : ''}`}>
+    <div className={`${styles.sidebar} ${isMobile ? styles.mobileSidebar : ''}`}>
       <div className={styles.sidebarHeader}>
         <div className={styles.logo}>
-          {isMobile ? 'BYTES LMS' : (isHovered ? 'BYTES LMS' : 'B')}
+          {isMobile ? 'BYTES ADMIN' : 'BA'}
         </div>
-        {/* {isMobile && (
+        {isMobile && (
           <Button 
             variant="link" 
             className={styles.closeBtn}
@@ -42,24 +41,30 @@ const Sidebar = () => {
           >
             ✕
           </Button>
-        )} */}
+        )}
       </div>
 
       <Nav className={`flex-column ${styles.nav}`}>
-        {menuItems.map((item) => (
+        {adminMenuItems.map((item) => (
           <Nav.Link
             key={item.path}
             as={Link}
-            to={item.path}
+            to={item.comingSoon ? '#' : item.path}
             className={`${styles.navLink} ${
               location.pathname === item.path ? styles.active : ''
-            }`}
+            } ${item.comingSoon ? styles.comingSoon : ''}`}
             title={item.label}
-            onClick={() => isMobile && setShowMobile(false)}
+            onClick={() => {
+              if (isMobile) setShowMobile(false);
+              if (item.comingSoon) {
+                alert('Feature coming soon!');
+              }
+            }}
           >
             <span className={styles.navIcon}>{item.icon}</span>
-            {(isMobile || isHovered) && (
-              <span className={styles.navText}>{item.label}</span>
+            <span className={styles.navText}>{item.label}</span>
+            {item.comingSoon && (
+              <span className={styles.comingSoonBadge}>Soon</span>
             )}
           </Nav.Link>
         ))}
@@ -67,15 +72,13 @@ const Sidebar = () => {
 
       <div className={styles.sidebarFooter}>
         <div className={styles.userInfo}>
-          <span className={styles.userIcon}>👤</span>
-          {(isMobile || isHovered) && (
-            <div className={styles.userDetails}>
-              <div className={styles.userName}>
-                {currentUser?.displayName || currentUser?.email?.split('@')[0]}
-              </div>
-              <div className={styles.userEmail}>{currentUser?.email}</div>
+          <span className={styles.userIcon}>👑</span>
+          <div className={styles.userDetails}>
+            <div className={styles.userName}>
+              {currentUser?.displayName || currentUser?.email?.split('@')[0]}
             </div>
-          )}
+            <div className={styles.userRole}>Administrator</div>
+          </div>
         </div>
         
         <Button 
@@ -86,7 +89,7 @@ const Sidebar = () => {
           title="Logout"
         >
           <span>🚪</span>
-          {(isMobile || isHovered) && <span>Logout</span>}
+          <span>Logout</span>
         </Button>
       </div>
     </div>
@@ -94,7 +97,7 @@ const Sidebar = () => {
 
   return (
     <>
-      {/* Mobile Hamburger Button - Always visible when sidebar is closed */}
+      {/* Mobile Hamburger Button */}
       {!showMobile && (
         <Button 
           variant="outline-dark" 
@@ -105,12 +108,8 @@ const Sidebar = () => {
         </Button>
       )}
 
-      {/* Desktop Sidebar with Hover */}
-      <div 
-        className={styles.desktopSidebar}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
+      {/* Desktop Sidebar */}
+      <div className={styles.desktopSidebar}>
         <SidebarContent />
       </div>
 
@@ -129,4 +128,4 @@ const Sidebar = () => {
   );
 };
 
-export default Sidebar;
+export default AdminSidebar;

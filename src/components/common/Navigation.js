@@ -45,7 +45,7 @@ const Navigation = () => {
     <Navbar expand="lg" fixed="top">
       <Container>
         <Navbar.Brand as={Link} to={getDashboardPath()}>
-          <Image src={bodlalogo} /> CRM {isAdmin() && <Badge bg="primary">Admin</Badge>}
+           CRM {isAdmin() && <Badge bg="primary">Admin</Badge>}
         </Navbar.Brand>
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
         <Navbar.Collapse id="basic-navbar-nav">

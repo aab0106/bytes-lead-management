@@ -1,100 +1,88 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import { auth, db } from '../services/firebase';
-import { doc, getDoc } from "firebase/firestore";
+import React, { useContext, useState, useEffect } from 'react';
+import { 
+  auth
+} from '../services/firebase';
 import { 
   signInWithEmailAndPassword, 
-  signOut, 
-  onAuthStateChanged,
-  getIdTokenResult
+  createUserWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
 } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../services/firebase';
 
-const AuthContext = createContext();
+const AuthContext = React.createContext();
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+export function useAuth() {
+  return useContext(AuthContext);
+}
 
-export const AuthProvider = ({ children }) => {
+export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
-  const [userClaims, setUserClaims] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState(null);
 
-  // ✅ Login function with Firestore block check
-  const login = async (email, password) => {
+  // Simple role detection - no complex Firestore operations
+  const determineUserRole = (user) => {
+    if (!user || !user.email) return 'agent';
+    
+    // Direct email check - most reliable
+    const adminEmails = ['awaisbodla.ab21@gmail.com'];
+    if (adminEmails.includes(user.email.toLowerCase())) {
+      return 'admin';
+    }
+    
+    return 'agent';
+  };
+
+  // Enhanced login function
+  async function login(email, password) {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-
-      // 🔍 Check agent Firestore profile
-      const agentRef = doc(db, "agents", user.uid);
-      const agentSnap = await getDoc(agentRef);
-
-      if (agentSnap.exists()) {
-        const agentData = agentSnap.data();
-        if (agentData.blocked === true || agentData.status === "blocked") {
-          console.warn("Blocked user tried login:", email);
-          await signOut(auth);
-          throw new Error("Your account has been blocked. Please contact admin.");
-        }
-      }
-
-      // Refresh token only if not blocked
-      await user.getIdToken(true);
-      return userCredential;
+      
+      // Set role immediately based on email
+      const role = determineUserRole(user);
+      setUserRole(role);
+      console.log(`User logged in: ${user.email}, Role: ${role}`);
+      
+      return user;
     } catch (error) {
-      console.error("Login error:", error);
+      console.error('Login error:', error);
       throw error;
     }
-  };
+  }
 
-  const logout = () => signOut(auth);
+  function signup(email, password) {
+    return createUserWithEmailAndPassword(auth, email, password);
+  }
 
-  const isAdmin = () => {
-    if (currentUser?.email === 'awaisbodla.ab21@gmail.com') {
-      return true;
-    }
-    return userClaims?.admin === true;
-  };
+  function logout() {
+    setUserRole(null);
+    return signOut(auth);
+  }
 
-  // ✅ Enforce block status on auth state changes
+  function isAdmin() {
+    return userRole === 'admin';
+  }
+
+  function isAgent() {
+    return userRole === 'agent';
+  }
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setCurrentUser(user);
+      
       if (user) {
-        try {
-          console.log("User detected:", user.email);
-
-          const agentRef = doc(db, "agents", user.uid);
-          const agentSnap = await getDoc(agentRef);
-
-          if (agentSnap.exists()) {
-            const agentData = agentSnap.data();
-            if (agentData.blocked === true || agentData.status === "blocked") {
-              console.warn("Blocked user detected on state change, signing out:", user.email);
-              await signOut(auth);
-              setCurrentUser(null);
-              setUserClaims(null);
-              setLoading(false);
-              return;
-            }
-          }
-
-          // Refresh claims if not blocked
-          const token = await user.getIdToken(true);
-          const idTokenResult = await getIdTokenResult(user);
-
-          setUserClaims(idTokenResult.claims);
-          setCurrentUser(user);
-        } catch (error) {
-          console.error("Error in auth state change:", error);
-        }
+        // Set role immediately based on email
+        const role = determineUserRole(user);
+        setUserRole(role);
+        console.log(`Auth state changed: ${user.email}, Role: ${role}`);
       } else {
-        setCurrentUser(null);
-        setUserClaims(null);
+        setUserRole(null);
       }
+      
       setLoading(false);
     });
 
@@ -103,11 +91,12 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     currentUser,
-    userClaims,
+    userRole,
     login,
+    signup,
     logout,
     isAdmin,
-    loading
+    isAgent
   };
 
   return (
@@ -115,4 +104,4 @@ export const AuthProvider = ({ children }) => {
       {!loading && children}
     </AuthContext.Provider>
   );
-};
+}

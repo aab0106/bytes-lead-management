@@ -1,0 +1,91 @@
+.tabNavigation {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.tabButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.tabIcon {
+  font-size: 1.2rem;
+}
+
+.createButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.agentAvatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #76b07f, #5a8f63);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.1rem;
+  margin-right: 1rem;
+  flex-shrink: 0;
+}
+
+.modalAvatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #76b07f, #5a8f63);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.5rem;
+  margin: 0 auto;
+}
+
+.comingSoon {
+  color: #718096;
+}
+
+.comingSoon h4 {
+  color: #4a5568;
+  margin-bottom: 1rem;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .tabNavigation {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .tabButton {
+    justify-content: center;
+    padding: 1rem;
+  }
+
+  .agentAvatar {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+    margin-right: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .createButton {
+    width: 100%;
+    justify-content: center;
+    margin-top: 1rem;
+  }
+}

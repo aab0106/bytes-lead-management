@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Button } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Alert } from 'react-bootstrap';
 import DashboardLayout from '../layout/DashboardLayout';
 import AgentLeadsTable from './AgentLeadsTable';
 import AgentNotes from './AgentNotes';
@@ -20,6 +20,7 @@ const AgentDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [showNotifications, setShowNotifications] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
+  const [debugInfo, setDebugInfo] = useState('');
   const { currentUser } = useAuth();
 
   useEffect(() => {
@@ -30,8 +31,11 @@ const AgentDashboard = () => {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
+      setDebugInfo(`Loading leads for agent: ${currentUser?.email}`);
 
       const leads = await leadService.getAgentLeads();
+
+      setDebugInfo(`Found ${leads.length} leads for ${currentUser?.email}`);
 
       const totalLeads = leads.length;
       const wonLeads = leads.filter(lead => lead.status === 'Closed').length;
@@ -77,6 +81,7 @@ const AgentDashboard = () => {
       });
     } catch (error) {
       console.error('Error loading dashboard data:', error);
+      setDebugInfo(`Error: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -89,7 +94,6 @@ const AgentDashboard = () => {
       const todaysFollowUps = await notificationsService.getTodaysFollowUps(currentUser.uid);
       const upcomingFollowUps = await notificationsService.getUpcomingFollowUps(currentUser.uid);
 
-      // Count only unique follow-ups (today's are already included in upcoming)
       const totalCount = todaysFollowUps.length + upcomingFollowUps.length;
       setNotificationCount(totalCount);
     } catch (error) {
@@ -99,7 +103,6 @@ const AgentDashboard = () => {
 
   const handleNotificationsClose = () => {
     setShowNotifications(false);
-    // Refresh the count when notifications are closed
     loadNotificationCount();
   };
 
@@ -128,6 +131,21 @@ const AgentDashboard = () => {
           <div className={styles.headerLeft}>
             <h1>My Leads</h1>
             <p>Welcome back, {currentUser?.displayName || currentUser?.email?.split('@')[0]}</p>
+            {/* {debugInfo && (
+              <Alert variant="info" size="sm" className="mt-2">
+                <small>Debug: {debugInfo}</small>
+                <br />
+                <small>UID: {currentUser?.uid}</small>
+                <Button 
+                  variant="outline-primary" 
+                  size="sm" 
+                  className="ms-2"
+                  onClick={loadDashboardData}
+                >
+                  Refresh
+                </Button>
+              </Alert>
+            )} */}
           </div>
           <div className={styles.headerRight}>
             <Button
@@ -151,6 +169,7 @@ const AgentDashboard = () => {
             <StatCard
               title="Total Leads"
               value={dashboardData.totalLeads}
+              subtitle="All Assigned Leads"
               icon="👥"
               color="primary"
             />

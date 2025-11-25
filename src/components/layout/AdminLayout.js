@@ -1,15 +1,49 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Nav, Button, Offcanvas } from 'react-bootstrap';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import styles from './Sidebar.module.css';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../services/firebase';
+import styles from './AdminLayout.module.css';
 
-const Sidebar = () => {
+const AdminLayout = ({ children }) => {
   const [showMobile, setShowMobile] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [userProfile, setUserProfile] = useState(null);
   const { currentUser, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Fetch user profile from Firestore
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!currentUser) return;
+
+      try {
+        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        if (userDoc.exists()) {
+          setUserProfile(userDoc.data());
+        } else {
+          setUserProfile({
+            firstName: 'Admin',
+            lastName: 'User',
+            email: currentUser.email,
+            role: 'admin'
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+        setUserProfile({
+          firstName: 'Admin',
+          lastName: 'User', 
+          email: currentUser.email,
+          role: 'admin'
+        });
+      }
+    };
+
+    fetchUserProfile();
+  }, [currentUser]);
 
   const handleLogout = async () => {
     try {
@@ -21,10 +55,23 @@ const Sidebar = () => {
   };
 
   const menuItems = [
-    { path: '/dashboard', icon: '📊', label: 'Dashboard' },
-    { path: '/leads', icon: '👥', label: 'My Leads' },
-    { path: '/profile', icon: '👤', label: 'Profile' },
+    { path: '/admin/analytics', label: 'Analytics', icon: '📊' },
+    { path: '/admin/leads', label: 'Leads Management', icon: '👥' },
+    // { path: '/admin/agents', label: 'Agents', icon: '👨‍💼' },
+    { path: '/admin/settings', label: 'Settings', icon: '⚙️' },
   ];
+
+  // Get display name from user profile
+  const getDisplayName = () => {
+    if (userProfile) {
+      if (userProfile.firstName && userProfile.lastName) {
+        return `${userProfile.firstName} ${userProfile.lastName}`;
+      } else if (userProfile.firstName) {
+        return userProfile.firstName;
+      }
+    }
+    return currentUser?.email?.split('@')[0] || 'User';
+  };
 
   const SidebarContent = ({ isMobile = false }) => (
     <div className={`${styles.sidebar} ${
@@ -32,9 +79,9 @@ const Sidebar = () => {
     } ${isMobile ? styles.mobileSidebar : ''}`}>
       <div className={styles.sidebarHeader}>
         <div className={styles.logo}>
-          {isMobile ? 'BYTES LMS' : (isHovered ? 'BYTES LMS' : 'B')}
+          {isMobile ? 'BYTES ADMIN' : (isHovered ? 'BYTES ADMIN' : 'B')}
         </div>
-        {/* {isMobile && (
+        {isMobile && (
           <Button 
             variant="link" 
             className={styles.closeBtn}
@@ -42,7 +89,7 @@ const Sidebar = () => {
           >
             ✕
           </Button>
-        )} */}
+        )}
       </div>
 
       <Nav className={`flex-column ${styles.nav}`}>
@@ -71,7 +118,7 @@ const Sidebar = () => {
           {(isMobile || isHovered) && (
             <div className={styles.userDetails}>
               <div className={styles.userName}>
-                {currentUser?.displayName || currentUser?.email?.split('@')[0]}
+                {getDisplayName()}
               </div>
               <div className={styles.userEmail}>{currentUser?.email}</div>
             </div>
@@ -93,7 +140,7 @@ const Sidebar = () => {
   );
 
   return (
-    <>
+    <div className={styles.adminLayout}>
       {/* Mobile Hamburger Button - Always visible when sidebar is closed */}
       {!showMobile && (
         <Button 
@@ -125,8 +172,15 @@ const Sidebar = () => {
           <SidebarContent isMobile={true} />
         </Offcanvas.Body>
       </Offcanvas>
-    </>
+
+      {/* Main Content */}
+      <div className={`${styles.mainContent} ${
+        isHovered && !showMobile ? styles.contentWithSidebarExpanded : styles.contentWithSidebarCollapsed
+      }`}>
+        {children}
+      </div>
+    </div>
   );
 };
 
-export default Sidebar;
+export default AdminLayout;

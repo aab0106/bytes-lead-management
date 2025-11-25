@@ -1,0 +1,128 @@
+.metricCard {
+  text-align: center;
+  padding: 1rem;
+  border-radius: 8px;
+  background: #f8f9fa;
+  border-left: 4px solid #4299e1;
+}
+
+.metricValue {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #2d3748;
+  margin: 0;
+}
+
+.metricLabel {
+  font-size: 0.9rem;
+  color: #718096;
+  margin: 0.5rem 0 0 0;
+  font-weight: 600;
+}
+
+.tableContainer {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.tableHeader {
+  background: #f8f9fa;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.agentInfo {
+  min-width: 120px;
+}
+
+.agentName {
+  font-size: 0.9rem;
+  color: #2d3748;
+}
+
+.countBadge {
+  font-size: 0.8rem;
+  min-width: 35px;
+}
+
+.rateBadge {
+  font-size: 0.75rem;
+  min-width: 50px;
+}
+
+.activitiesContainer {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.activityItem {
+  display: flex;
+  align-items: flex-start;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.activityItem:last-child {
+  border-bottom: none;
+}
+
+.activityIcon {
+  font-size: 1.2rem;
+  margin-right: 0.75rem;
+  margin-top: 0.1rem;
+  flex-shrink: 0;
+}
+
+.activityContent {
+  flex: 1;
+}
+
+.activityText {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.9rem;
+  color: #2d3748;
+  line-height: 1.4;
+}
+
+.statusList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.statusItem {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0;
+  font-size: 0.9rem;
+}
+
+.statsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.statItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  font-size: 0.9rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .metricValue {
+    font-size: 1.5rem;
+  }
+  
+  .tableContainer {
+    max-height: 250px;
+  }
+  
+  .agentName {
+    font-size: 0.8rem;
+  }
+}

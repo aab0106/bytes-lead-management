@@ -1,0 +1,125 @@
+.activityLogCard {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  background: white;
+  height: 400px;
+}
+
+.activityLogCard .card-header {
+  background: linear-gradient(135deg, #76b07f, #5a8f63);
+  color: white;
+  border: none;
+  padding: 1rem 1.5rem;
+}
+
+.activityLogCard .card-header h5 {
+  margin: 0;
+  font-weight: 600;
+}
+
+.activityBody {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  height: calc(400px - 60px);
+}
+
+.errorAlert {
+  margin: 1rem;
+}
+
+.loadingState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 2rem;
+  color: #718096;
+}
+
+.emptyState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: #718096;
+}
+
+.activitiesList {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem;
+}
+
+.activityItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-bottom: 1px solid #f1f3f4;
+  transition: background-color 0.2s ease;
+}
+
+.activityItem:hover {
+  background-color: #f8f9fa;
+  border-radius: 6px;
+}
+
+.activityItem:last-child {
+  border-bottom: none;
+}
+
+.activityIcon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.activityContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.activityText {
+  margin: 0 0 0.25rem 0;
+  color: #2d3748;
+  font-size: 0.85rem;
+  line-height: 1.3;
+  word-wrap: break-word;
+}
+
+.activityTime {
+  color: #718096;
+  font-size: 0.75rem;
+}
+
+/* Scrollbar styling */
+.activitiesList::-webkit-scrollbar {
+  width: 4px;
+}
+
+.activitiesList::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 2px;
+}
+
+.activitiesList::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 2px;
+}
+
+.activitiesList::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .activityLogCard {
+    height: 300px;
+  }
+  
+  .activityBody {
+    height: calc(300px - 60px);
+  }
+}
