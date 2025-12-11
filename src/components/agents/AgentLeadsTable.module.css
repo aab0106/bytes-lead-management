@@ -54,7 +54,7 @@
 
 .searchInput {
   flex: 1;
-  min-width: 0; /* Allow shrinking */
+  min-width: 150px; /* Allow shrinking */
 }
 
 .searchInput .form-control {

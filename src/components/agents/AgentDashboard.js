@@ -48,22 +48,31 @@ const AgentDashboard = () => {
       let todaysFollowups = 0;
       let upcomingFollowups = 0;
 
-      leads.forEach((lead) => {
-        if (lead.followUps) {
-          lead.followUps.forEach((followUp) => {
-            const followUpDate = followUp.date?.toDate ? followUp.date.toDate() : new Date(followUp.date);
-            const followUpDay = new Date(followUpDate);
-            followUpDay.setHours(0, 0, 0, 0);
+     leads.forEach((lead) => {
+  if (lead.followUps) {
+    lead.followUps.forEach((followUp) => {
+      // Handle different date formats
+      let followUpDate;
+      if (followUp.date?.seconds) {
+        followUpDate = new Date(followUp.date.seconds * 1000);
+      } else if (typeof followUp.date === 'string') {
+        followUpDate = new Date(followUp.date);
+      } else {
+        followUpDate = new Date(followUp.date);
+      }
+      
+      const followUpDay = new Date(followUpDate);
+      followUpDay.setHours(0, 0, 0, 0);
 
-            if (followUpDay.getTime() === today.getTime()) {
-              todaysFollowups++;
-            }
-            if (followUpDate >= today && followUpDate <= threeDaysLater) {
-              upcomingFollowups++;
-            }
-          });
-        }
-      });
+      if (followUpDay.getTime() === today.getTime()) {
+        todaysFollowups++;
+      }
+      if (followUpDate >= today && followUpDate <= threeDaysLater) {
+        upcomingFollowups++;
+      }
+    });
+  }
+});
 
       const qualifiedLeads = leads.filter(lead => lead.status === 'Qualified').length;
       const visitedLeads = leads.filter(lead => lead.status === 'Visited').length;

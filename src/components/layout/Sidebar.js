@@ -22,7 +22,7 @@ const Sidebar = () => {
 
   const menuItems = [
     { path: '/dashboard', icon: '📊', label: 'Dashboard' },
-    { path: '/leads', icon: '👥', label: 'My Leads' },
+    
     { path: '/profile', icon: '👤', label: 'Profile' },
   ];
 

@@ -9,44 +9,57 @@ const FollowUpsPopup = ({ show, onHide, lead, onFollowupAdded }) => {
   const [error, setError] = useState('');
 
   const handleAddFollowup = async (e) => {
-    e.preventDefault();
-    if (!newFollowup.date || !newFollowup.notes.trim()) {
-      setError('Please fill in both date and notes');
-      return;
-    }
+  e.preventDefault();
+  if (!newFollowup.date || !newFollowup.notes.trim()) {
+    setError('Please fill in both date and notes');
+    return;
+  }
 
-    setAddingFollowup(true);
-    setError('');
+  setAddingFollowup(true);
+  setError('');
 
-    try {
-      await leadService.addFollowUp(lead.id, newFollowup);
-      setNewFollowup({ date: '', notes: '' });
-      
-      // Call the callback to refresh data
-      if (onFollowupAdded) {
-        await onFollowupAdded();
-      }
-      
-      // Auto-close the popup after successful addition
-      onHide();
-    } catch (error) {
-      setError('Error adding follow-up: ' + error.message);
-    } finally {
-      setAddingFollowup(false);
+  try {
+    // Convert the datetime-local string to ISO string
+    const followupData = {
+      date: newFollowup.date, // This is a string like "2024-01-15T14:30"
+      notes: newFollowup.notes
+    };
+    
+    // Use leadService (which is now fixed)
+    await leadService.addFollowUp(lead.id, followupData);
+    
+    setNewFollowup({ date: '', notes: '' });
+    
+    if (onFollowupAdded) {
+      await onFollowupAdded();
     }
-  };
+    
+    onHide();
+  } catch (error) {
+    console.error('Full error:', error);
+    setError('Error adding follow-up: ' + error.message);
+  } finally {
+    setAddingFollowup(false);
+  }
+};
 
   const formatFollowupDate = (date) => {
-    if (!date) return 'N/A';
-    try {
-      if (date.seconds) {
-        return new Date(date.seconds * 1000).toLocaleString();
-      }
+  if (!date) return 'N/A';
+  try {
+    // Handle ISO string
+    if (typeof date === 'string') {
       return new Date(date).toLocaleString();
-    } catch {
-      return 'Invalid date';
     }
-  };
+    // Handle Firestore Timestamp
+    if (date.seconds) {
+      return new Date(date.seconds * 1000).toLocaleString();
+    }
+    // Handle Date object
+    return new Date(date).toLocaleString();
+  } catch {
+    return 'Invalid date';
+  }
+};
 
   const isUpcomingFollowup = (followupDate) => {
     const today = new Date();

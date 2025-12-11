@@ -1,7 +1,7 @@
 import { 
   collection, doc, getDocs, getDoc, updateDoc, deleteDoc, 
   query, where, orderBy, addDoc, setDoc, writeBatch, arrayUnion,
-  limit, serverTimestamp
+  limit, serverTimestamp, Timestamp
 } from 'firebase/firestore';
 import { db, auth } from './firebase';
 
@@ -177,21 +177,36 @@ export const leadService = {
   },
 
   // === ADD FOLLOW-UP ===
-  addFollowUp: async (leadId, followUpData) => {
+ addFollowUp: async (leadId, followUpData) => {
     try {
       const currentUser = auth.currentUser;
       if (!currentUser) {
         throw new Error('No user logged in');
       }
 
+      // Convert followUpData.date to Timestamp if it's a string
+      let followUpDate;
+      if (followUpData.date) {
+        if (typeof followUpData.date === 'string') {
+          followUpDate = Timestamp.fromDate(new Date(followUpData.date));
+        } else {
+          followUpDate = followUpData.date;
+        }
+      }
+
       const leadRef = doc(db, COLLECTIONS.LEADS, leadId);
+      
+      // Create follow-up object WITHOUT serverTimestamp()
+      const newFollowUp = {
+        date: followUpDate || Timestamp.now(),
+        notes: followUpData.notes || '',
+        id: Date.now().toString(),
+        createdBy: currentUser.uid,
+        createdAt: Timestamp.now() // ✅ Use Timestamp.now() instead of serverTimestamp()
+      };
+
       await updateDoc(leadRef, {
-        followUps: arrayUnion({
-          ...followUpData,
-          id: Date.now().toString(),
-          createdBy: currentUser.uid,
-          createdAt: serverTimestamp()
-        }),
+        followUps: arrayUnion(newFollowUp), // ✅ Now this works
         updatedAt: serverTimestamp()
       });
 
@@ -219,7 +234,11 @@ export const leadService = {
 
       const leadData = leadDoc.data();
       const updatedFollowUps = leadData.followUps?.map(fup => 
-        fup.id === followUpId ? { ...fup, status, updatedAt: serverTimestamp() } : fup
+        fup.id === followUpId ? { 
+          ...fup, 
+          status, 
+          updatedAt: Timestamp.now() // ✅ Use Timestamp.now()
+        } : fup
       ) || [];
 
       await updateDoc(leadRef, {
